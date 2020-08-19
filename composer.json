@@ -1,0 +1,17 @@
+{
+    "name": "lorenzo/php-aop",
+    "description": "Aspect Oriented Programming for PHP",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Lorenzo",
+            "email": "lorenzomengon@gmail.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Lonesoft\\PhpAop\\": "src/"
+        }
+    }
+}
