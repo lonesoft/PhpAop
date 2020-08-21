@@ -5,6 +5,7 @@ use Lonesoft\PhpAop\JointPoint;
 
 class ReplaceTest extends \Codeception\Test\Unit
 {
+
     /**
      * @var \UnitTester
      */
@@ -55,24 +56,30 @@ class ReplaceTest extends \Codeception\Test\Unit
         $this->assertEquals('callPrivate', $actual);
     }
 
-    public function testRewireExistingMethod()
+    public function testCanRewireExistingMethod()
     {
-        $actual = Aop::replaceMethod($this->className, 'testMe', 'return \'replaced\';');
-
-        $this->assertTrue($actual);
+        Aop::replaceMethod($this->className, 'testMe', 'return \'replaced\';');
     }
 
-    public function testRewireNonExistingMethod()
+    public function testCanRewirePrivateMethod()
     {
-        $actual = Aop::replaceMethod($this->className, 'this_method_does_not_exist', 'return \'replaced\';');
-
-        $this->assertFalse($actual);
+        Aop::replaceMethod($this->className, 'callPrivate', 'return \'replaced\';');
     }
-    public function testRewireNonExistingClass()
-    {
-        $actual = Aop::replaceMethod('this_class_does_not_exist', 'whatever', 'return \'replaced\';');
 
-        $this->assertFalse($actual);
+    public function testRewireNonExistingClassShouldThrow()
+    {
+        $exception = new \Exception('Class \'this_class_does_not_exist\' not found');
+        $this->tester->expectException($exception, function(){
+            Aop::replaceMethod('this_class_does_not_exist', 'whatever', 'return \'replaced\';');
+        });
+    }
+
+    public function testRewireNonExistingMethodShouldThrow()
+    {
+        $exception = new \Exception('Method \'this_method_does_not_exist\' of \'' . $this->className . '\' not found');
+        $this->tester->expectException($exception, function(){
+            Aop::replaceMethod($this->className, 'this_method_does_not_exist', 'return \'replaced\';');
+        });
     }
 
     public function testReplacePublicFunction()
@@ -103,8 +110,8 @@ class ReplaceTest extends \Codeception\Test\Unit
     }
 
     public function testReplacePrivateFunction(){
-        Aop::replaceMethod($this->className, 'testMe', 'return \'replaced\';');
-        $actual = $this->class->testMe();
+        Aop::replaceMethod($this->className, 'callPrivate', 'return \'replaced\';');
+        $actual = $this->class->testCallPrivate();
 
         $this->assertEquals('replaced', $actual);
 

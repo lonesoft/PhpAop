@@ -2,7 +2,6 @@
 
 namespace Lonesoft\PhpAop;
 
-use PhpParser\Node\Expr\Closure;
 use ReflectionClass;
 use ReflectionMethod;
 
@@ -18,7 +17,7 @@ class Aop
     public static function replaceMethod($className, $methodName, $advice)
     {
         $instance = new self($className, $methodName, $advice, __FUNCTION__);
-        return $instance->rewire();
+        $instance->rewire();
     }
 
     /**
@@ -114,14 +113,9 @@ class Aop
         $this->joinType = $joinType;
     }
 
-    /**
-     * @return bool
-     */
     protected function rewire()
     {
-        if (!$this->methodExists()) {
-            return false;
-        }
+        $this->validateMethodExists();
         $this->assignAlternativeNames();
         $this->createWrapperCode();
         $this->reflectMethod();
@@ -132,13 +126,13 @@ class Aop
     /**
      * @return bool
      */
-    protected function methodExists()
+    protected function validateMethodExists()
     {
         if (!class_exists($this->className)) {
-            return false;
+            throw new \Exception('Class \'' . $this->className . '\' not found');
         }
         if (!method_exists($this->className, $this->methodName)) {
-            return false;
+            throw new \Exception('Method \'' . $this->methodName . '\' of \'' . $this->className . '\' not found');
         }
         return true;
     }
