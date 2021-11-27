@@ -9,17 +9,18 @@
             "email": "lorenzomengon@gmail.com"
         }
     ],
-    "require": {
-        "ext-runkit7": "*"
-    },
     "autoload": {
         "psr-4": {
             "Lonesoft\\PhpAop\\": "src/"
         }
     },
     "require-dev": {
+        "lonesoft/bash-project": "^0.6.1",
         "codeception/codeception": "^4.1",
-        "codeception/module-phpbrowser": "^1.0.0",
-        "codeception/module-asserts": "^1.0.0"
+        "codeception/module-asserts": "^1.3",
+        "codeception/module-phpbrowser": "^1.0"
+    },
+    "config": {
+        "bin-compat": "symlink"
     }
 }
