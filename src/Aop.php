@@ -7,16 +7,21 @@ use ReflectionMethod;
 
 class Aop
 {
+    const NEW_SCOPE_NONE = 'none';
+    const NEW_SCOPE_STATIC = 'static';
+    const NEW_SCOPE_THIS = 'this';
+
     protected static $callables = [];
 
     /**
      * @param string $className
      * @param string $methodName
      * @param callable|array|string $advice
+     * @param string $newScope
      */
-    public static function replaceMethod($className, $methodName, $advice)
+    public static function replaceMethod($className, $methodName, $advice, $newScope = self::NEW_SCOPE_NONE)
     {
-        $instance = new self($className, $methodName, $advice, __FUNCTION__);
+        $instance = new self($className, $methodName, $advice, $newScope, __FUNCTION__);
         $instance->rewire();
     }
 
@@ -29,11 +34,17 @@ class Aop
     {
         if (isset(self::$callables[$callbackName])) {
             $callable = self::$callables[$callbackName];
-            if ($callable instanceof \Closure) {
-                $newCallable = $callable->bindTo($context, $context);
-                $result = $newCallable->__invoke($joinPoint);
+            $advice = $callable['advice'];
+            $newScope = $callable['new_scope'];
+            if ($advice instanceof \Closure) {
+                if($newScope == self::NEW_SCOPE_STATIC){
+                    $advice = $advice->bindTo($context);
+                }elseif ($newScope == self::NEW_SCOPE_THIS){
+                    $advice = $advice->bindTo($context, $context);
+                }
+                $result = $advice->__invoke($joinPoint);
             } else {
-                $result = call_user_func($callable, $joinPoint);
+                $result = call_user_func($advice, $joinPoint);
             }
             return $result;
         }
@@ -66,6 +77,11 @@ class Aop
      * @var callable|array|string
      */
     protected $advice;
+
+    /**
+     * @var string
+     */
+    protected $newScope;
 
     /**
      * @var string
@@ -105,11 +121,12 @@ class Aop
      * @param callable|array|string $advice
      * @param string $joinType
      */
-    protected function __construct($className, $methodName, $advice, $joinType)
+    protected function __construct($className, $methodName, $advice, $newScope, $joinType)
     {
         $this->className = $className;
         $this->methodName = $methodName;
         $this->advice = $advice;
+        $this->newScope = $newScope;
         $this->joinType = $joinType;
     }
 
@@ -174,7 +191,10 @@ class Aop
 
     protected function addCallback()
     {
-        self::$callables[$this->adviceMethodName] = $this->advice;
+        self::$callables[$this->adviceMethodName] = [
+            'advice' => $this->advice,
+            'new_scope' => $this->newScope,
+        ];
     }
 
     protected function reflectMethod()

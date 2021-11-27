@@ -151,7 +151,7 @@ class ReplaceTest extends \Codeception\Test\Unit
     {
         Aop::replaceMethod($this->className, 'testMe', function(JointPoint $jointPoint){
             return $this->callPrivate();
-        });
+        }, Aop::NEW_SCOPE_THIS);
         $actual = $this->class->testMe();
 
         $this->assertEquals('callPrivate', $actual);
