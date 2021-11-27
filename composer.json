@@ -3,6 +3,7 @@
     "version": "0.1.1",
     "description": "Aspect Oriented Programming for PHP",
     "type": "library",
+    "license": "MIT",
     "authors": [
         {
             "name": "Lorenzo",
