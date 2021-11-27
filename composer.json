@@ -9,6 +9,9 @@
             "email": "lorenzomengon@gmail.com"
         }
     ],
+    "require": {
+        "ext-runkit7": "*"
+    },
     "autoload": {
         "psr-4": {
             "Lonesoft\\PhpAop\\": "src/"
