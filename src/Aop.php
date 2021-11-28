@@ -7,9 +7,6 @@ use ReflectionMethod;
 
 class Aop
 {
-    const NEW_SCOPE_NONE = 'none';
-    const NEW_SCOPE_STATIC = 'static';
-    const NEW_SCOPE_THIS = 'this';
 
     protected static $callables = [];
 
@@ -19,9 +16,9 @@ class Aop
      * @param callable|array|string $advice
      * @param string $newScope
      */
-    public static function replaceMethod($className, $methodName, $advice, $newScope = self::NEW_SCOPE_NONE)
+    public static function replaceMethod($className, $methodName, $advice)
     {
-        $instance = new self($className, $methodName, $advice, $newScope, __FUNCTION__);
+        $instance = new self($className, $methodName, $advice, __FUNCTION__);
         $instance->rewire();
     }
 
@@ -32,22 +29,16 @@ class Aop
      */
     public static function executeCallback($callbackName, $joinPoint, $context)
     {
-        if (isset(self::$callables[$callbackName])) {
-            $callable = self::$callables[$callbackName];
-            $advice = $callable['advice'];
-            $newScope = $callable['new_scope'];
+//        if (isset(self::$callables[$callbackName])) {
+            $advice = self::$callables[$callbackName];
             if ($advice instanceof \Closure) {
-                if($newScope == self::NEW_SCOPE_STATIC){
-                    $advice = $advice->bindTo($context);
-                }elseif ($newScope == self::NEW_SCOPE_THIS){
-                    $advice = $advice->bindTo($context, $context);
-                }
+                $advice = $advice->bindTo($context, $context);
                 $result = $advice->__invoke($joinPoint);
             } else {
                 $result = call_user_func($advice, $joinPoint);
             }
             return $result;
-        }
+//        }
     }
 
     protected static $codeTemplates = [
@@ -55,6 +46,12 @@ class Aop
             '$arguments = func_get_args();',
             '$jointPoint = new ${joinPointClassName}($arguments);',
             '$result = $this->${adviceMethodName}($jointPoint);',
+            'return $result;'
+        ],
+        'replaceMethodStatic' => [
+            '$arguments = func_get_args();',
+            '$jointPoint = new ${joinPointClassName}($arguments);',
+            '$result = self::${adviceMethodName}($jointPoint);',
             'return $result;'
         ],
         'executeCallback' => [
@@ -121,12 +118,11 @@ class Aop
      * @param callable|array|string $advice
      * @param string $joinType
      */
-    protected function __construct($className, $methodName, $advice, $newScope, $joinType)
+    protected function __construct($className, $methodName, $advice, $joinType)
     {
         $this->className = $className;
         $this->methodName = $methodName;
         $this->advice = $advice;
-        $this->newScope = $newScope;
         $this->joinType = $joinType;
     }
 
@@ -134,8 +130,8 @@ class Aop
     {
         $this->validateMethodExists();
         $this->assignAlternativeNames();
-        $this->createWrapperCode();
         $this->reflectMethod();
+        $this->createWrapperCode();
         $this->swapMethods();
         return true;
     }
@@ -191,10 +187,7 @@ class Aop
 
     protected function addCallback()
     {
-        self::$callables[$this->adviceMethodName] = [
-            'advice' => $this->advice,
-            'new_scope' => $this->newScope,
-        ];
+        self::$callables[$this->adviceMethodName] =  $this->advice;
     }
 
     protected function reflectMethod()
@@ -203,6 +196,9 @@ class Aop
         $method = $reflection->getMethod($this->methodName);
         $this->methodFlag = $this->getMethodFlag($method);
         $this->methodParameters = $this->getMethodParameters($method);
+        if($this->joinType == 'replaceMethod' && ($this->methodFlag & RUNKIT_ACC_STATIC) == RUNKIT_ACC_STATIC){
+            $this->joinType = 'replaceMethodStatic';
+        }
     }
 
     protected function swapMethods()
@@ -224,7 +220,7 @@ class Aop
             $flag = RUNKIT_ACC_PUBLIC;
         }
         if ($method->isStatic()) {
-            $flag = $flag || RUNKIT_ACC_STATIC;;
+            $flag = $flag + RUNKIT_ACC_STATIC;
         }
         return $flag;
     }
@@ -250,7 +246,7 @@ class Aop
                     case 'string':
                         $arg .= '\'' . str_replace('\'', '\\\'', $default) . '\'';
                         break;
-                    case 'null':
+                    case 'NULL':
                         $arg .= 'null';
                         break;
                     default:
