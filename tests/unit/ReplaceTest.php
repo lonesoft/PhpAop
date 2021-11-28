@@ -3,73 +3,160 @@
 use Lonesoft\PhpAop\Aop;
 use Lonesoft\PhpAop\JointPoint;
 
-class ReplaceTest extends \Codeception\Test\Unit
+class ReplaceTest extends AbstractTest
 {
 
-    /**
-     * @var \UnitTester
-     */
-    protected $tester;
 
-    protected $className;
-    protected $class;
+    // PUBLIC METHODS
 
-    protected function _before()
+    public function testCallPublicMethod()
     {
-        $uid = uniqid('',true);
-        $this->className = 'test_' . md5($uid);
-        $code = [
-            'class ' . $this->className . '{',
-            '    public function testMe(){',
-            '        return __FUNCTION__;',
-            '    }',
-            '    public function testCallPrivate(){',
-            '        return $this->callPrivate();',
-            '    }',
-            '    private function callPrivate(){',
-            '        return __FUNCTION__;',
-            '    }',
-            '    public static function callStatic(){',
-            '        return __FUNCTION__;',
-            '    }',
-            '}'
-        ];
-        eval(implode("\n", $code));
-        $this->class = new $this->className();
+        $actual = $this->class->testCallPublic();
+
+        $this->assertEquals('callPublic', $actual);
     }
 
-    protected function _after()
+    public function testReplacePublicMethod()
     {
+        Aop::replaceMethod($this->className, 'callPublic', 'return \'replaced\';');
+        $actual = $this->class->testCallPublic();
+
+        $this->assertEquals('replaced', $actual);
     }
 
-    public function testCallPublicFunction()
-    {
-        $actual = $this->class->testMe();
 
-        $this->assertEquals('testMe', $actual);
+    // PROTECTED METHODS
+
+    public function testCallProtectedMethod()
+    {
+        $actual = $this->class->testCallProtected();
+
+        $this->assertEquals('callProtected', $actual);
     }
 
-    public function testCallPrivateFunction()
+    public function testReplaceProtectedFunction()
+    {
+        Aop::replaceMethod($this->className, 'callProtected', 'return \'replaced\';');
+        $actual = $this->class->testCallProtected();
+
+        $this->assertEquals('replaced', $actual);
+    }
+
+
+    // PRIVATE METHODS
+
+    public function testCallPrivateMethod()
     {
         $actual = $this->class->testCallPrivate();
 
         $this->assertEquals('callPrivate', $actual);
     }
 
-    public function testCanRewireExistingMethod()
-    {
-        Aop::replaceMethod($this->className, 'testMe', 'return \'replaced\';');
-    }
-
-    public function testCanRewirePrivateMethod()
+    public function testReplacePrivateMethod()
     {
         Aop::replaceMethod($this->className, 'callPrivate', 'return \'replaced\';');
+        $actual = $this->class->testCallPrivate();
+
+        $this->assertEquals('replaced', $actual);
     }
+
+
+    // STATIC METHODS
+
+    public function testCallStaticMethod()
+    {
+        $actual = $this->class->testCallStatic();
+
+        $this->assertEquals('callStatic', $actual);
+    }
+
+    public function testReplaceStaticMethod()
+    {
+        Aop::replaceMethod($this->className, 'callStatic', 'return \'replaced\';');
+        $actual = $this->class->testCallStatic();
+
+        $this->assertEquals('replaced', $actual);
+    }
+
+
+    // METHODS WITH PARAMETERS
+
+    public function testCallMethodWithParameters()
+    {
+        $actual = $this->class->testCallWithParameters(1, 'a', false, 'not-null');
+
+        $this->assertEquals('callWithParameters(1, a, , not-null)', $actual);
+    }
+
+    public function testReplaceMethodWithParameters()
+    {
+        Aop::replaceMethod($this->className, 'callWithParameters', 'return \'replaced\';');
+        $actual = $this->class->testCallWithParameters(1, 'a', false, 'not-null');
+
+        $this->assertEquals('replaced', $actual);
+    }
+
+
+    // METHODS WITH DEFAULT PARAMETERS
+
+    public function testCallMethodWithDefaultParameters()
+    {
+        $actual = $this->class->testCallWithDefaultParameters();
+
+        $this->assertEquals('callWithParameters(1, default, 1, )', $actual);
+    }
+
+    public function testReplaceMethodWithDefaultParameters()
+    {
+        Aop::replaceMethod($this->className, 'callWithParameters', 'return \'replaced\';');
+        $actual = $this->class->testCallWithDefaultParameters();
+
+        $this->assertEquals('replaced', $actual);
+    }
+
+    // METHODS WITH TYPED PARAMETERS
+
+    public function testCallMethodWithTypedParameters()
+    {
+        $actual = $this->class->testCallWithTypedParameters(new stdClass());
+
+        $this->assertEquals('callWithTypedParameters', $actual);
+    }
+
+    public function testReplaceMethodWithTypedParameters()
+    {
+        Aop::replaceMethod($this->className, 'callWithTypedParameters', 'return \'replaced\';');
+        $actual = $this->class->testCallWithTypedParameters(new stdClass());
+
+        $this->assertEquals('replaced', $actual);
+    }
+
+    public function testReplaceMethodWithWrongTypedParametersShouldFail()
+    {
+        Aop::replaceMethod($this->className, 'callWithTypedParameters', 'return \'replaced\';');
+
+        $message = [
+            'Argument 1 passed to ',
+            $this->className,
+            '::testCallWithTypedParameters() ',
+            'must be an instance of stdClass, null given, called in ',
+            __FILE__,
+            ' on line ',
+            __LINE__ + 4
+        ];
+        $exception = new \TypeError(implode('', $message));
+        $this->tester->expectThrowable($exception, function () {
+            $this->class->testCallWithTypedParameters(null);
+        });
+    }
+
+
+    // EXCEPTIONS
 
     public function testRewireNonExistingClassShouldThrow()
     {
         $exception = new \Exception('Class \'this_class_does_not_exist\' not found');
-        $this->tester->expectException($exception, function(){
+        $this->tester->expectThrowable($exception, function () {
             Aop::replaceMethod('this_class_does_not_exist', 'whatever', 'return \'replaced\';');
         });
     }
@@ -77,61 +164,48 @@ class ReplaceTest extends \Codeception\Test\Unit
     public function testRewireNonExistingMethodShouldThrow()
     {
         $exception = new \Exception('Method \'this_method_does_not_exist\' of \'' . $this->className . '\' not found');
-        $this->tester->expectException($exception, function(){
+        $this->tester->expectThrowable($exception, function () {
             Aop::replaceMethod($this->className, 'this_method_does_not_exist', 'return \'replaced\';');
         });
     }
 
-    public function testReplacePublicFunction()
-    {
-        Aop::replaceMethod($this->className, 'testMe', 'return \'replaced\';');
-        $actual = $this->class->testMe();
 
-        $this->assertEquals('replaced', $actual);
-
-    }
+    // RETURN ARGUMENTS
 
     public function testReturnArgument()
     {
-        Aop::replaceMethod($this->className, 'testMe', 'return $jointPoint->getArgument(0);');
-        $actual = $this->class->testMe('argument');
+        Aop::replaceMethod($this->className, 'callPublic', 'return $jointPoint->getArgument(0);');
+        $actual = $this->class->callPublic('argument');
 
         $this->assertEquals('argument', $actual);
-
     }
 
     public function testReturnArgumentDefault()
     {
-        Aop::replaceMethod($this->className, 'testMe', 'return $jointPoint->getArgument(1, \'default\');');
-        $actual = $this->class->testMe('argument');
+        Aop::replaceMethod($this->className, 'callPublic', 'return $jointPoint->getArgument(1, \'default\');');
+        $actual = $this->class->callPublic('argument');
 
         $this->assertEquals('default', $actual);
-
     }
 
-    public function testReplacePrivateFunction(){
-        Aop::replaceMethod($this->className, 'callPrivate', 'return \'replaced\';');
-        $actual = $this->class->testCallPrivate();
 
-        $this->assertEquals('replaced', $actual);
-
-    }
+    // CALLBACKS
 
     public function testReplaceCallback()
     {
         $function = [$this->className, 'callStatic'];
-        Aop::replaceMethod($this->className, 'testMe', $function);
-        $actual = $this->class->testMe();
+        Aop::replaceMethod($this->className, 'callPublic', $function);
+        $actual = $this->class->callPublic();
 
         $this->assertEquals('callStatic', $actual);
     }
 
     public function testReplaceClosure()
     {
-        Aop::replaceMethod($this->className, 'testMe', function(){
+        Aop::replaceMethod($this->className, 'callPublic', function () {
             return 'replaced';
         });
-        $actual = $this->class->testMe();
+        $actual = $this->class->callPublic();
 
         $this->assertEquals('replaced', $actual);
     }
@@ -139,22 +213,34 @@ class ReplaceTest extends \Codeception\Test\Unit
     public function testReplaceClosureWithUse()
     {
         $return = 'new return';
-        Aop::replaceMethod($this->className, 'testMe', function(JointPoint $jointPoint) use($return){
+        Aop::replaceMethod($this->className, 'callPublic', function (JointPoint $jointPoint) use ($return) {
             return $return;
         });
-        $actual = $this->class->testMe();
+        $actual = $this->class->callPublic();
 
         $this->assertEquals($return, $actual);
     }
 
     public function testReplaceClosureWithThis()
     {
-        Aop::replaceMethod($this->className, 'testMe', function(JointPoint $jointPoint){
+        Aop::replaceMethod($this->className, 'callPublic', function (JointPoint $jointPoint) {
+            /** @var mocked $this */
             return $this->callPrivate();
-        }, Aop::NEW_SCOPE_THIS);
-        $actual = $this->class->testMe();
+        });
+        $actual = $this->class->callPublic();
 
         $this->assertEquals('callPrivate', $actual);
+    }
+
+    public function testReplaceClosureWithStatic()
+    {
+        Aop::replaceMethod($this->className, 'callPublic', function (JointPoint $jointPoint) {
+            /** @var mocked self */
+            return self::callStatic();
+        });
+        $actual = $this->class->callPublic();
+
+        $this->assertEquals('callStatic', $actual);
     }
 
 }
