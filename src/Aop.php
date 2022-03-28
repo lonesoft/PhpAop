@@ -23,6 +23,18 @@ class Aop
     }
 
     /**
+     * @param string $className
+     * @param string $methodName
+     * @param callable|array|string $advice
+     * @param string $newScope
+     */
+    public static function beforeMethod($className, $methodName, $advice)
+    {
+        $instance = new self($className, $methodName, $advice, __FUNCTION__);
+        $instance->rewire();
+    }
+
+    /**
      * @param $callbackName
      * @param JointPoint $joinPoint
      * @return mixed
@@ -52,6 +64,22 @@ class Aop
             '$arguments = func_get_args();',
             '$jointPoint = new ${joinPointClassName}($arguments);',
             '$result = self::${adviceMethodName}($jointPoint);',
+            'return $result;'
+        ],
+        'beforeMethod' => [
+            '$arguments = func_get_args();',
+            '$jointPoint = new ${joinPointClassName}($arguments);',
+            '$this->${adviceMethodName}($jointPoint);',
+            '$originalMethod = [$this, \'${originalMethodName}\'];',
+            '$result = call_user_func_array($originalMethod, $jointPoint->getArguments());',
+            'return $result;'
+        ],
+        'beforeMethodStatic' => [
+            '$arguments = func_get_args();',
+            '$jointPoint = new ${joinPointClassName}($arguments);',
+            'self::${adviceMethodName}($jointPoint);',
+            '$originalMethod = \'${className}::${originalMethodName}\';',
+            '$result = call_user_func_array($originalMethod, $jointPoint->getArguments());',
             'return $result;'
         ],
         'executeCallback' => [
@@ -173,6 +201,7 @@ class Aop
     {
         $template = (array)self::$codeTemplates[$name];
         $replace = [
+            '${className}' => $this->className,
             '${originalMethodName}' => $this->originalMethodName,
             '${adviceMethodName}' => $this->adviceMethodName,
             '${joinPointClassName}' => __NAMESPACE__ . '\\JointPoint',
@@ -196,8 +225,8 @@ class Aop
         $method = $reflection->getMethod($this->methodName);
         $this->methodFlag = $this->getMethodFlag($method);
         $this->methodParameters = $this->getMethodParameters($method);
-        if($this->joinType == 'replaceMethod' && ($this->methodFlag & RUNKIT_ACC_STATIC) == RUNKIT_ACC_STATIC){
-            $this->joinType = 'replaceMethodStatic';
+        if( ($this->methodFlag & RUNKIT_ACC_STATIC) == RUNKIT_ACC_STATIC){
+            $this->joinType .= 'Static';
         }
     }
 
