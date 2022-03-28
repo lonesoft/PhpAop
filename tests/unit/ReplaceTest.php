@@ -9,13 +9,6 @@ class ReplaceTest extends AbstractTest
 
     // PUBLIC METHODS
 
-    public function testCallPublicMethod()
-    {
-        $actual = $this->class->testCallPublic();
-
-        $this->assertEquals('callPublic', $actual);
-    }
-
     public function testReplacePublicMethod()
     {
         Aop::replaceMethod($this->className, 'callPublic', 'return \'replaced\';');
@@ -26,13 +19,6 @@ class ReplaceTest extends AbstractTest
 
 
     // PROTECTED METHODS
-
-    public function testCallProtectedMethod()
-    {
-        $actual = $this->class->testCallProtected();
-
-        $this->assertEquals('callProtected', $actual);
-    }
 
     public function testReplaceProtectedFunction()
     {
@@ -45,13 +31,6 @@ class ReplaceTest extends AbstractTest
 
     // PRIVATE METHODS
 
-    public function testCallPrivateMethod()
-    {
-        $actual = $this->class->testCallPrivate();
-
-        $this->assertEquals('callPrivate', $actual);
-    }
-
     public function testReplacePrivateMethod()
     {
         Aop::replaceMethod($this->className, 'callPrivate', 'return \'replaced\';');
@@ -62,13 +41,6 @@ class ReplaceTest extends AbstractTest
 
 
     // STATIC METHODS
-
-    public function testCallStaticMethod()
-    {
-        $actual = $this->class->testCallStatic();
-
-        $this->assertEquals('callStatic', $actual);
-    }
 
     public function testReplaceStaticMethod()
     {
@@ -81,13 +53,6 @@ class ReplaceTest extends AbstractTest
 
     // METHODS WITH PARAMETERS
 
-    public function testCallMethodWithParameters()
-    {
-        $actual = $this->class->testCallWithParameters(1, 'a', false, 'not-null');
-
-        $this->assertEquals('callWithParameters(1, a, , not-null)', $actual);
-    }
-
     public function testReplaceMethodWithParameters()
     {
         Aop::replaceMethod($this->className, 'callWithParameters', 'return \'replaced\';');
@@ -99,13 +64,6 @@ class ReplaceTest extends AbstractTest
 
     // METHODS WITH DEFAULT PARAMETERS
 
-    public function testCallMethodWithDefaultParameters()
-    {
-        $actual = $this->class->testCallWithDefaultParameters();
-
-        $this->assertEquals('callWithParameters(1, default, 1, )', $actual);
-    }
-
     public function testReplaceMethodWithDefaultParameters()
     {
         Aop::replaceMethod($this->className, 'callWithParameters', 'return \'replaced\';');
@@ -115,13 +73,6 @@ class ReplaceTest extends AbstractTest
     }
 
     // METHODS WITH TYPED PARAMETERS
-
-    public function testCallMethodWithTypedParameters()
-    {
-        $actual = $this->class->testCallWithTypedParameters(new stdClass());
-
-        $this->assertEquals('callWithTypedParameters', $actual);
-    }
 
     public function testReplaceMethodWithTypedParameters()
     {
