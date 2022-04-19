@@ -35,6 +35,18 @@ class Aop
     }
 
     /**
+     * @param string $className
+     * @param string $methodName
+     * @param callable|array|string $advice
+     * @param string $newScope
+     */
+    public static function afterMethod($className, $methodName, $advice)
+    {
+        $instance = new self($className, $methodName, $advice, __FUNCTION__);
+        $instance->rewire();
+    }
+
+    /**
      * @param $callbackName
      * @param JointPoint $joinPoint
      * @return mixed
@@ -80,6 +92,24 @@ class Aop
             'self::${adviceMethodName}($jointPoint);',
             '$originalMethod = \'${className}::${originalMethodName}\';',
             '$result = call_user_func_array($originalMethod, $jointPoint->getArguments());',
+            'return $result;'
+        ],
+        'afterMethod' => [
+            '$arguments = func_get_args();',
+            '$originalMethod = [$this, \'${originalMethodName}\'];',
+            '$result = call_user_func_array($originalMethod, $arguments);',
+            '$jointPoint = new ${joinPointClassName}($arguments);',
+            '$jointPoint->setReturnedValue($result);',
+            '$result = $this->${adviceMethodName}($jointPoint);',
+            'return $result;'
+        ],
+        'afterMethodStatic' => [
+            '$arguments = func_get_args();',
+            '$originalMethod = \'${className}::${originalMethodName}\';',
+            '$result = call_user_func_array($originalMethod, $arguments);',
+            '$jointPoint = new ${joinPointClassName}($arguments);',
+            '$jointPoint->setReturnedValue($result);',
+            '$result = self::${adviceMethodName}($jointPoint);',
             'return $result;'
         ],
         'executeCallback' => [
