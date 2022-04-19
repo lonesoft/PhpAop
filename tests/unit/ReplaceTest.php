@@ -3,7 +3,7 @@
 use Lonesoft\PhpAop\Aop;
 use Lonesoft\PhpAop\JointPoint;
 
-class ReplaceTest extends AbstractTest
+class ReplaceTest extends \Tests\Utility\Unit\Baseline
 {
 
 

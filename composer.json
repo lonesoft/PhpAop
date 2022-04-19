@@ -15,7 +15,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Lonesoft\\PhpAop\\": "src/"
+            "Lonesoft\\PhpAop\\": "src/",
+            "Tests\\Utility\\": "tests/Utility/"
         }
     },
     "require-dev": {

@@ -1,4 +1,5 @@
 <?php
+namespace Tests\Utility\Unit;
 
 use Lonesoft\PhpAop\Aop;
 use Lonesoft\PhpAop\JointPoint;
@@ -19,9 +20,8 @@ use Lonesoft\PhpAop\JointPoint;
  * @method testCallWithDefaultParameters()
  * @method testCallWithTypedParameters(stdClass $class)
  */
-abstract class mocked{};
 
-abstract class AbstractTest extends \Codeception\Test\Unit
+abstract class Baseline extends \Codeception\Test\Unit
 {
 
     /**
@@ -31,7 +31,7 @@ abstract class AbstractTest extends \Codeception\Test\Unit
 
     protected $className;
     /**
-     * @var mocked
+     * @var Mocked
      */
     protected $class;
 
@@ -42,6 +42,9 @@ abstract class AbstractTest extends \Codeception\Test\Unit
         $code = [
             'class ' . $this->className . '{',
             '    public function callPublic(){',
+            '        return __FUNCTION__;',
+            '    }',
+            '    public function callAnotherPublic(){',
             '        return __FUNCTION__;',
             '    }',
             '    protected function callProtected(){',
